@@ -1,0 +1,5 @@
+.gitignore
+.venv
+app.db
+.idea
+__pycache__
