@@ -5,13 +5,13 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 import logging, time
 
-from schemas import LoginRequest
+from schemas import LoginRequest, RegistrationRequest, RoleUpdateRequest
 from security import create_access_token, verify_password
 from auth import require_roles
 from dependencies import success
 from database import SessionLocal
 from models import User
-
+from registration import user_registration, update_user_role
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 
@@ -55,6 +55,22 @@ def verify_user_and_generate_token(email, password):
 def generate_access_token(request: Request, payload: LoginRequest):
     token = verify_user_and_generate_token(payload.email, payload.password)
     return success({"access_token": token})
+
+@app.post("/registration")
+@limiter.limit("5/minute")
+def registration(request: Request, payload: RegistrationRequest):
+    result = user_registration(payload)
+    return success({"result": result})
+
+@app.put("/admin/update-role")
+def update_role(
+    payload: RoleUpdateRequest,
+    admin=Depends(require_roles("admin"))
+):
+    result = update_user_role(payload)
+    return {"message": result}
+
+
 
 @app.post("/login")
 @limiter.limit("5/minute")
